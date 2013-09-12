@@ -1,0 +1,14 @@
+glob:*.session
+glob:*.pyc
+glob:*.swp
+glob:*.pik
+glob:*.svp
+glob:*.tsv
+glob:*.db
+glob:*.zip
+glob:*.xml
+glob:*.dot 
+glob:*.svg
+glob:__pycache__/*
+glob:.cache/*
+glob:mongo_data/*

@@ -1,0 +1,15 @@
+*.session
+*.pyc
+*.swp
+*.pik
+*.svp
+*.tsv
+*.db
+*.zip
+*.xml
+*.dot 
+*.svg
+__pycache__/*
+*.cache/*
+mongo_data/*
+.hg/*
