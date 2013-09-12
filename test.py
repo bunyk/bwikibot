@@ -16,34 +16,6 @@ class Zulu(TestCase):
 
         self.assertEqual(zulu2datetime(zulu), now)
 
-""" #TODO update tests when module ready
-from bwikibot.extensions.check_uploads import UploadsChecker
-diagnose = UploadsChecker().diagnose
-
-class CheckUploads(TestCase):
-    def test_regression_10984497(self):
-        self.assertFalse(diagnose('''{{Зображення
-|Назва=
-|Опис=Підпис Ватченка
-|Автор=Ватченко Олексій Федосійович
-|Джерело=http://sammler.ru/index.php?showtopic=46497&st=20
-|Час створення=1977
-|Ліцензія={{Fairuse in|Ватченко Олексій Федосійович}}
-}}'''))
-    def test_regression_110300189(self):
-        self.assertFalse(diagnose('''{{Зображення
-|Назва= 
-|Опис= Фотографія архітектора Владислава Павловича  Фадеїчева
-|Автор= невідомо
-|Джерело= Фадеичев Владислав Павлович [Изоматериал] : лич. лист чл. СА УССР. — К. : [б. и.], 1935–1987. — 10 л. // [http://csam.archives.gov.ua/ Центральный государственный архив-музей литературы и искусства Украины]: ф. 640, оп. 4, д. 359. {{ref-ru}}
-|Час створення= 1981 рік
-|Ліцензія=
-}}
-{{ФП з ОДВ|Фадеїчев Владислав Павлович}}
-
-[[Категорія:Зображення:Архітектори України]]
-'''))
-"""
 
 from bwikibot.spell.corrector import correct
 class TestCorrector(TestCase):
