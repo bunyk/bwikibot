@@ -3,6 +3,7 @@ import json
 from pprint import pprint
 
 from bwikibot.path import config
+import re
 
 endpoint = config['endpoint']
 login = config['login']
@@ -14,11 +15,16 @@ def get_page():
     r = s.get(endpoint, params=dict(
         format='json',
         action='query',
-        titles='Git',
+        titles='Ленін Володимир Ілліч',
         prop='revisions',
         rvprop='content',
     ))
-    pprint(json.loads(r.text))
+    pages = json.loads(r.text)['query']['pages']
+    page = list(pages.values())[0]['revisions'][0]['*']
+    lines = page.splitlines()
+    for line in lines:
+        if 'зображення' in line:
+            print(line)
 
 def write_page():
     r = s.post(endpoint, params=dict(
@@ -58,4 +64,4 @@ def write_page():
 
 
 if __name__ == '__main__':
-    write_page()
+    get_page()

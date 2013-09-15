@@ -1,6 +1,5 @@
 #coding=utf-8
 
-from copy import copy
 from datetime import datetime
 import getpass
 import json
@@ -14,33 +13,16 @@ try: # python3
 except ImportError: # python2
     from urllib import urlencode
 
-import httplib2
+import requests
 
 DEBUG = False
 SERVER_ENCODING = 'utf-8'
 LIST_LIMIT = 400
 
-httplib2.debuglevel = 4 if DEBUG else 0
-
 class WikiError(Exception):
     def __init__(self, code, msg):
         super(WikiError, self).__init__('WikiError: %s' % msg)
         self.code = code
-
-class ChainedRedirectError(Exception):
-    def __init__(self, page):
-        super(ChainedRedirectError, self).__init__(
-            'Too much redirects on page %s' % page.title
-        )
-
-
-def utf8(x):
-    if not x:
-        return b''
-    if isinstance(x, bytes):
-        return x
-    return x.encode('utf-8')
-
 
 def datetime2zulu(t):
     return t.isoformat().split('.')[0] + 'Z'
@@ -51,34 +33,16 @@ def zulu2datetime(z):
 def get_content_type(filename):
     return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
 
-def encode_multipart_formdata(fields, files):
-    """
-    fields is a sequence of (name, value) elements for regular form fields.
-    files is a sequence of (name, filename, value) elements for data to be uploaded as files
-    Return (content_type, body) ready for httplib.HTTP instance
-    """
-    BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
-    CRLF = b'\r\n'
-    L = []
-    def app(l):
-        L.append(utf8(l))
 
-    for (key, value) in fields:
-        app('--' + BOUNDARY)
-        app('Content-Disposition: form-data; name="%s"' % key)
-        app('')
-        app(value)
-    for (key, filename, value) in files:
-        app('--' + BOUNDARY)
-        app('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, filename))
-        app('Content-Type: %s' % get_content_type(filename))
-        app('')
-        app(value)
-    app('--' + BOUNDARY + '--')
-    app('')
-    body = CRLF.join(L)
-    content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
-    return content_type, body
+def prepare_params(params):
+    params = dict(
+        (k, 1 if v is True else v)
+        for k, v in (params or {}).items()
+        if v
+    )
+    params['format'] = 'json'
+    return params
+
 
 class Wiki(object):
     ''' Class for performing general requests to the API
@@ -96,32 +60,17 @@ class Wiki(object):
                 return i
         return namespaces_ids.get(ns_name)
 
-    def __init__(self, endpoint=None, throttle=1,
-        disable_ssl_certificate_validation=True
-    ):
+    def __init__(self, endpoint=None, throttle=1):
         ''' Create wiki client for given endpoint addres.  '''
         self._tokens = {}
         self.endpoint = endpoint
         self.throttle = throttle
 
-
-        self.http = httplib2.Http('.cache')
-        self.http.disable_ssl_certificate_validation = disable_ssl_certificate_validation
-
-
+        self.session = requests.Session()
 
         if endpoint:
             self.get_namespaces()
         # else may be load session
-
-    def get_unified_login_to(self, domain):
-        ''' Returns new wiki instance with changed domain and namespace '''
-        res = copy(self)
-        url = self.endpoint.split('/') # http://domain/...
-        url[2] = domain
-        res.endpoint = '/'.join(url)
-        res.get_namespaces()
-        return res
 
     def load(self, filename):
         ''' Load cookies, endpoint, namespaces. '''
@@ -160,22 +109,11 @@ class Wiki(object):
         Returns headers and parsed json of resonce.
         '''
         assert self.endpoint, "Can't make a request without endpoint"
-        if params is None:
-            params = {}
 
-        p2 = {}
-        for k,v in params.items():
-            if v is True:
-                p2[k] = 1
-            elif v is False:
-                pass
-            else:
-                p2[k] = v
-        params = p2
+        params = prepare_params(params)
 
-        params['format'] = 'json'
-        if headers is None:
-            headers = {}
+        headers = headers or {}
+
         headers['user-agent'] = 'bwikibot'
         if self.cookies:
             headers['cookie'] = '; '.join(
@@ -196,7 +134,9 @@ class Wiki(object):
                     [('file', params['filename'], data)]
                 )
                 headers['Content-type'] = content_type
+
         time.sleep(self.throttle)
+
         responce, content = self.http.request(
             query,
             method,
@@ -206,8 +146,6 @@ class Wiki(object):
         if responce.status != 200:
             raise WikiError('HTTP ' + responce.status,
                 'HTTP status error: %s' % responce.status)
-        if DEBUG:
-            print('\n')
         content = content.decode(SERVER_ENCODING)
         try:
             content = json.loads(content)
@@ -723,7 +661,7 @@ class Page(object):
             res = res.redirect()
             i += 1
             if i > 3:
-                raise ChainedRedirectError(self)
+                raise WikiError('Too much redirects on page %s' % self)
         return res
 
 
