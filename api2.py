@@ -1,3 +1,4 @@
+# coding=utf-8
 import requests
 import json
 from pprint import pprint
@@ -64,4 +65,7 @@ def write_page():
 
 
 if __name__ == '__main__':
-    get_page()
+    from bwikibot.api2 import Wiki
+    wiki = Wiki(endpoint)
+    wiki.login(login, password)
+    print(wiki.page('Євромайдан').read())
