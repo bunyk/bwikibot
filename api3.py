@@ -3,6 +3,7 @@
 import json
 from pprint import pprint
 from itertools import islice
+from time import sleep
 
 import requests # pip install requests
 import mwparserfromhell # pip install mwparserfromhell
@@ -13,6 +14,7 @@ s = requests.Session()
 
 def request(**kwargs):
     ''' Зробити запит до Wiki '''
+    sleep(0.5) # почекати пів секунди, аби за надто активні запити не забанили IP
     params = dict(format='json')
     params.update(kwargs)
     r = s.get(endpoint, params=params)
